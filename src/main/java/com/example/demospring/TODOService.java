@@ -8,7 +8,8 @@ import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,7 +28,7 @@ public class TODOService {
 
         String res = jdbcTemplate.queryForObject(
                 new StringBuilder().append("INSERT INTO DEMO_SCHEMA.TODOS(description, date_time, is_completed) ").append(" VALUES(?,?::TIMESTAMP,?) returning id").toString(),
-        new Object[]{todo.description,todo.dateTime,todo.isCompleted },
+        new Object[]{todo.description, Timestamp.valueOf(todo.getDateTime()),todo.isCompleted },
         new int[]{Types.VARCHAR,Types.VARCHAR,Types.BOOLEAN},
         String.class );
 
@@ -37,10 +38,17 @@ public class TODOService {
         return todo;
     }
 
-    boolean updateTODO(TODO todo){
-        int res = jdbcTemplate.update("UPDATE DEMO_SCHEMA.TODOS SET IS_COMPLETED=? WHERE ID=?", todo.isCompleted, todo.id);
+    boolean updateTODO(TODO todo) {
+        int res = jdbcTemplate.update(
+                "UPDATE DEMO_SCHEMA.TODOS SET description=?, date_time=?, is_completed=? WHERE ID=?",
+                todo.getDescription(),
+                Timestamp.valueOf(todo.getDateTime()),
+                todo.isCompleted(),
+                todo.getId()
+        );
         return res > 0;
     }
+
 
 
 
@@ -54,11 +62,11 @@ public class TODOService {
             try {
                 int id = (int) row.get("id");
                 String description = (String) row.get("description");
-                String dateTimeString = row.get("date_time") != null ? row.get("date_time").toString() : null;
+                LocalDateTime dateTime = ((Timestamp) row.get("date_time")).toLocalDateTime();
                 boolean isCompleted = (boolean) row.get("is_completed");
 
 
-                TODO todo = new TODO(id, description, dateTimeString, isCompleted);
+                TODO todo = new TODO(id, description, dateTime, isCompleted);
                 todos.add(todo);
             } catch (ClassCastException | DateTimeParseException e) {
                 System.err.println("Error parsing row: " + e.getMessage());
@@ -68,6 +76,12 @@ public class TODOService {
 
         return todos;
     }
-   
- 
+    public boolean delete(String description) {
+        int res = jdbcTemplate.update(
+                "DELETE FROM DEMO_SCHEMA.TODOS WHERE description=?",
+                description
+        );
+        return res > 0;
+    }
+
 }

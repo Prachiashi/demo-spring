@@ -57,11 +57,17 @@ public class TODOController {
 
   @PostMapping(value="/updateTODO", consumes = MediaType.APPLICATION_JSON_VALUE)
   public ResponseEntity<Boolean> updateTODO(@RequestBody TODO newTodo) throws ServerException {
-    Boolean todo = todoService.updateTODO(newTodo);
-    ResponseEntity<Boolean> re = (todo ? 
-          ResponseEntity.status(HttpStatus.CREATED).body(todo) : 
-          ResponseEntity.status(HttpStatus.NOT_MODIFIED).body(todo));
+    Boolean isUpdated = todoService.updateTODO(newTodo);
+    ResponseEntity<Boolean> re = (isUpdated ?
+            ResponseEntity.status(HttpStatus.CREATED).body(isUpdated) :
+            ResponseEntity.status(HttpStatus.NOT_MODIFIED).body(isUpdated));
     return re;
   }
-
+  @DeleteMapping(value = "/deleteTODO", consumes = MediaType.APPLICATION_JSON_VALUE)
+  public ResponseEntity<Boolean> deleteTODO(@RequestBody TODO todo) {
+    boolean isDeleted = todoService.delete(todo.getDescription());
+    return isDeleted
+            ? ResponseEntity.status(HttpStatus.NO_CONTENT).body(true)
+            : ResponseEntity.status(HttpStatus.NOT_FOUND).body(false);
+  }
 }
